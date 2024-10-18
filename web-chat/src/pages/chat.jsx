@@ -19,7 +19,7 @@ function Chat() {
   const [roomName, setRoomName] = useState("");
 
   useEffect(() => {
-    socket = io("http://localhost:3000", { transports: ['websocket'] });
+    socket = io("https://vercel.live/link/chat-web-server-orcin.vercel.app?via=deployment-domains-list&p=1", { transports: ['websocket'] });
     socket.on("connect", () => {
       setSocketId(socket.id);
       console.log("connected", socket.id)
