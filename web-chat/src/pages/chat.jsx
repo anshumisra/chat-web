@@ -18,36 +18,64 @@ function Chat() {
   const [socketId, setSocketId] = useState("");
   const [messages, setMessages] = useState([]);
   const [roomName, setRoomName] = useState("");
-  const [connectionStatus, setConnectionStatus] = useState("disconnected");
+  const [connectionStatus, setConnectionStatus] = useState("connecting...");
 
   useEffect(() => {
-    socket = io("https://chat-web-server-anshumisras-projects.vercel.app/", {
-      transports: ['websocket']
-    });
+    const initializeSocket = () => {
+      const socketUrl = "https://chat-web-server-anshumisras-projects.vercel.app";
+      
+      socket = io(socketUrl, {
+        path: '/socket.io/',
+        transports: ['polling', 'websocket'],
+        upgrade: true,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 20000,
+        forceNew: true
+      });
 
-    socket.on("connect", () => {
-      setSocketId(socket.id);
-      setConnectionStatus("connected");
-      console.log("connected", socket.id);
-    });
 
-    socket.on("connect_error", (error) => {
-      console.log("Connection error:", error);
-      setConnectionStatus("error");
-    });
+      socket.on("connect", () => {
+        setSocketId(socket.id);
+        setConnectionStatus("connected");
+        console.log("Connected to server:", socket.id);
+      });
 
-    socket.on("receive-message", (data) => {
-      if (data.username !== userName) {
-        setMessages((prevMessages) => [...prevMessages, { text: data.message, isUser: false, username: data.username }]);
-      }
-      console.log(data);
-    });
+      socket.on("connection_ack", (data) => {
+        console.log("Connection acknowledged:", data);
+      });
 
-    socket.on("room-joined", (roomName) => {
-      setRoom(roomName);
-      setMessages([]);
-    });
+      socket.on("connect_error", (error) => {
+        console.error("Connection error:", error);
+        setConnectionStatus(`error: ${error.message}`);
+      });
 
+      socket.on("disconnect", (reason) => {
+        console.log("Disconnected:", reason);
+        setConnectionStatus(`disconnected: ${reason}`);
+      });
+
+      socket.on("receive-message", (data) => {
+        if (data.username !== userName) {
+          setMessages((prevMessages) => [...prevMessages, { 
+            text: data.message, 
+            isUser: false, 
+            username: data.username 
+          }]);
+        }
+      });
+
+      socket.on("room-joined", (roomName) => {
+        setRoom(roomName);
+        setMessages([]);
+        console.log("Joined room:", roomName);
+      });
+    };
+
+    initializeSocket();
+
+   
     return () => {
       if (socket) {
         socket.disconnect();
@@ -58,10 +86,20 @@ function Chat() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || !room) return;
     
-    const newMessage = { text: message, isUser: true, username: userName || 'Guest' };
-    socket.emit('message', { room, message, username: userName || 'Guest' });
+    const newMessage = { 
+      text: message, 
+      isUser: true, 
+      username: userName || 'Guest' 
+    };
+    
+    socket.emit('message', { 
+      room, 
+      message, 
+      username: userName || 'Guest' 
+    });
+    
     setMessages((prevMessages) => [...prevMessages, newMessage]);
     setMessage("");
   };
@@ -70,7 +108,11 @@ function Chat() {
     e.preventDefault();
     if (!roomName.trim()) return;
     
-    socket.emit('join-room', { room: roomName, username: userName || 'Guest' });
+    socket.emit('join-room', { 
+      room: roomName, 
+      username: userName || 'Guest' 
+    });
+    
     setRoomName("");
   };
 
@@ -98,10 +140,12 @@ function Chat() {
                 className="flex-grow px-4 py-2 rounded-l-full bg-stone-900 border-t border-b border-l border-yellow-500 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500"
                 onChange={(e) => setRoomName(e.target.value)}
                 value={roomName}
+                disabled={connectionStatus !== "connected"}
               />
               <button
                 type="submit"
-                className="px-6 py-2 rounded-r-full bg-yellow-500 text-gray-900 font-semibold transition-colors duration-300 hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-gray-800 flex items-center"
+                className="px-6 py-2 rounded-r-full bg-yellow-500 text-gray-900 font-semibold transition-colors duration-300 hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-gray-800 flex items-center disabled:opacity-50"
+                disabled={connectionStatus !== "connected"}
               >
                 <Users size={18} className="mr-2" />
                 Join Room
@@ -118,6 +162,7 @@ function Chat() {
           message={message}
           setMessage={setMessage}
           handleSubmit={handleSubmit}
+          disabled={!room || connectionStatus !== "connected"}
         />
       </div>
     </div>
