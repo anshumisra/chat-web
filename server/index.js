@@ -8,11 +8,11 @@ const app = express();
 app.use(cors())
 
 const server = createServer(app);
-
+console.log("HIII")
 const io = new Server(server, {
     cors: {
         origin: ["https://chat-web-client-two.vercel.app","https://chat-web-client-two.vercel.app/chat"],
-        methods: ["GET", "POST"],
+        methods: ["GET", "POST","HEAD"],
         credentials: true,
         transports: ['websocket']
     },
