@@ -3,7 +3,7 @@ import { Server } from 'socket.io';
 import { createServer } from 'http';
 import cors from 'cors';
 
-const port = 3000;
+const port = process.env.PORT || 3000;
 const app = express();
 app.use(cors())
 
@@ -11,10 +11,16 @@ const server = createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: ["https://chat-web-client-two.vercel.app/", "https://chat-web-client-two.vercel.app/chat"],
+        origin: ["https://chat-web-client-two.vercel.app","https://chat-web-client-two.vercel.app/chat"],
         methods: ["GET", "POST"],
         credentials: true,
+        transports: ['websocket', 'polling']
     },
+});
+
+
+app.get('/', (req, res) => {
+    res.send('Server is running');
 });
 
 io.on("connection", (socket) => {
@@ -37,7 +43,6 @@ io.on("connection", (socket) => {
 
     socket.on("disconnect", () => {
         console.log("User disconnected ", socket.id);
-        // Notify all rooms this socket was in about the disconnection
         socket.rooms.forEach(room => {
             if (room !== socket.id) {
                 io.to(room).emit("receive-message", { message: `A user has left the room.`, username: "Server" });
