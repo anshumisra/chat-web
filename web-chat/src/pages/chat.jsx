@@ -21,7 +21,7 @@ function Chat() {
   const [connectionStatus, setConnectionStatus] = useState("disconnected");
 
   useEffect(() => {
-    socket = io("https://vercel.live/link/chat-web-server-anshumisras-projects.vercel.app?via=deployment-domains-list&p=1&page=/", {
+    socket = io("https://chat-web-server-anshumisras-projects.vercel.app/", {
       transports: ['websocket']
     });
 
