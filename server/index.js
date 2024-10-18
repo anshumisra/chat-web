@@ -14,7 +14,7 @@ const io = new Server(server, {
         origin: ["https://chat-web-client-two.vercel.app","https://chat-web-client-two.vercel.app/chat"],
         methods: ["GET", "POST"],
         credentials: true,
-        transports: ['websocket', 'polling']
+        transports: ['websocket']
     },
 });
 

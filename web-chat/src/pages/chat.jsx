@@ -22,9 +22,7 @@ function Chat() {
 
   useEffect(() => {
     socket = io("https://chat-web-server-m5kkr1dcw-anshumisras-projects.vercel.app", {
-      transports: ['websocket', 'polling'],
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+      transports: ['websocket']
     });
 
     socket.on("connect", () => {
