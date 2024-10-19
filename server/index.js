@@ -3,42 +3,22 @@ import { Server } from 'socket.io';
 import { createServer } from 'http';
 import cors from 'cors';
 
-const port = process.env.PORT || 3000;
+const port = 3000;
 const app = express();
-
-
-app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST'],
-    credentials: true
-}));
+app.use(cors())
 
 const server = createServer(app);
 
 const io = new Server(server, {
-    path: '/socket.io/',
     cors: {
-        origin: "*",
+        origin: ["http://localhost:5173/", "http://localhost:5173/chat"],
         methods: ["GET", "POST"],
         credentials: true,
-        allowedHeaders: ["*"]
     },
-    transports: ['websocket'], // Remove polling, use only websocket
-    allowEIO3: true,
-    pingTimeout: 60000,
-    pingInterval: 25000
-});
-
-
-app.get('/', (req, res) => {
-    res.send('Server is running');
 });
 
 io.on("connection", (socket) => {
-    console.log("user connected", socket.id);
-
-
-    socket.emit('connection_ack', { status: 'connected', id: socket.id });
+    console.log("user connected", socket.id)
 
     socket.on("message", ({ room, message="Join a room", username }) => {
         console.log(`Message in room ${room} from ${username}: ${message}`);
@@ -52,26 +32,17 @@ io.on("connection", (socket) => {
         console.log(`User ${username} (${socket.id}) joined ${room}`);
         socket.emit('room-joined', room);
         
-        socket.to(room).emit("receive-message", { 
-            message: `${username} has joined the room.`, 
-            username: "Server" 
-        });
+        socket.to(room).emit("receive-message", { message: `${username} has joined the room.`, username: "Server" });
     });
 
     socket.on("disconnect", () => {
         console.log("User disconnected ", socket.id);
+        // Notify all rooms this socket was in about the disconnection
         socket.rooms.forEach(room => {
             if (room !== socket.id) {
-                io.to(room).emit("receive-message", { 
-                    message: `A user has left the room.`, 
-                    username: "Server" 
-                });
+                io.to(room).emit("receive-message", { message: `A user has left the room.`, username: "Server" });
             }
         });
-    });
-
-    socket.on("error", (error) => {
-        console.error("Socket error:", error);
     });
 });
 
