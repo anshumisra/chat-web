@@ -26,8 +26,8 @@ function Chat() {
       
       socket = io(socketUrl, {
         path: '/socket.io/',
-        transports: ['polling', 'websocket'],
-        upgrade: true,
+        transports: ['websocket'], // Remove polling, use only websocket
+        upgrade: false, // Since we're only using websocket, no need for upgrade
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
